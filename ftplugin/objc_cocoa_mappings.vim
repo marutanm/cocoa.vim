@@ -24,6 +24,7 @@ com! -buffer ListMethods call objc#method_list#Activate(1)
 com! -buffer -nargs=? -complete=customlist,objc#method_builder#Completion BuildMethods call objc#method_builder#Build('<args>')
 com! -buffer -nargs=? -complete=custom,objc#man#Completion CocoaDoc call objc#man#ShowDoc('<args>')
 com! -buffer -nargs=? Alternate call <SID>AlternateFile()
+com! -buffer -range ToggleComment :lockmarks <line1>,<line2>call <SID>CommentOut()
 
 let objc_man_key = exists('objc_man_key') ? objc_man_key : 'K'
 exe 'nn <buffer> <silent> '.objc_man_key.' :<c-u>call objc#man#ShowDoc()<cr>'
@@ -41,7 +42,8 @@ nn <buffer> <silent> <d-0> :call system('open -a Xcode '.b:cocoa_proj)<cr>
 nn <buffer> <silent> <d-2> :<c-u>ListMethods<cr>
 nm <buffer> <silent> <d-cr> <d-r>
 ino <buffer> <silent> <f5> <c-x><c-o>
-nn <buffer> <d-/> I// <ESC>
+nn <buffer> <d-/> :ToggleComment<cr>
+vn <buffer> <d-/> :ToggleComment<cr>
 nn <buffer> <d-[> <<
 nn <buffer> <d-]> >>
 
@@ -82,4 +84,23 @@ fun s:BuildAnd(command)
 				\ .'if (build target_) starts with "Build succeeded" then '
 				\ .a:command.' target_'
 				\ ."' -e 'end tell'")
+endf
+
+" Comment out selected lines (and vice versa).
+fu s:CommentOut()
+    "normal I// 
+    let l:prefix = "// "
+	let lineNum = line('.')
+    let origLine = getline('.')
+    if match(origLine, '^\s*'.l:prefix) == -1
+        " not present, add it
+        "			execute 's/^\(\s*\)\(\S\)/\1'.a:String.'\2'
+        let origLine = substitute(origLine,'^\(\s*\)\(\S\)', '\1'.l:prefix.'\2', '')
+        :call setline(lineNum, origLine)
+    else
+        "			" present, remove it
+        "			execute 's/^\(\s*\)'.a:String.'/\1/'
+        let origLine = substitute(origLine,'^\(\s*\)'.l:prefix, '\1', '')
+        :call setline(lineNum, origLine)
+    endif
 endf
